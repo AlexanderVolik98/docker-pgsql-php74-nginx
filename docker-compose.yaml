@@ -1,0 +1,63 @@
+version: "3"
+
+services:
+  
+  postgres_test:
+    restart: always
+    image: postgres
+    container_name: "${DATABASE_CONTAINER_NAME_TEST}"
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME_TEST}
+      PGDATA: /var/lib/postgresql_test/data
+    volumes:
+      - ./data/postgres_test:/var/lib/postgresql_test/data
+  postgres:
+    restart: always
+    image: postgres
+    user: "1000"
+    container_name: "${DATABASE_CONTAINER_NAME}"
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+  php-fpm:
+    image: php-fpm
+    restart: always
+    container_name: "php-fpm"
+    user: "1000"
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_SECRET=${APP_SECRET}
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_CONTAINER_NAME}:5432/${DATABASE_NAME}?serverVersion=11&charset=utf8
+    volumes:
+      - ./php-fpm/php-ini:/usr/local/etc/php/custom.d
+      - ./nginx/www:/var/www
+    environment:
+      PHP_INI_SCAN_DIR: "/usr/local/etc/php/custom.d:/usr/local/etc/php/conf.d"
+    depends_on:
+        - postgres
+
+  nginx:
+    restart: always
+    image: nginx:alpine
+    volumes:
+      - ./code:/var/www
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites/:/etc/nginx/sites-available
+      - ./nginx/conf.d/:/etc/nginx/conf.d
+      - ./nginx/logs:/var/log
+    depends_on:
+      - php-fpm
+    ports:
+      - "80:80"
+      - "443:443"
+    links:
+      - php-fpm
