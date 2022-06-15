@@ -5,8 +5,8 @@ upstream php-upstream {
 server {
     listen 80;
     index index.php;
-    server_name symfony-edu.lo;
-    set $ROOT /var/www/symfony-edu.lo/public;
+    server_name server-name.site;
+    set $ROOT /var/www/app-name/;
     error_log /var/log/nginx/error.log;
     access_log /var/log/nginx/access.log;
     root $ROOT;
@@ -33,18 +33,12 @@ server {
         rewrite ^(.*.php)/ $1 last;
     }
 
-    location ~* ^.+\.(webp|jpg|jpeg|gif|png|svg|js|css|mp3|mp4|mov|ogg|mpe?g|avi|zip|gz|bz2?|rar|swf|txt|otf|woff|woff2|ttf|pdf|ico)$ {
-        try_files $uri $ROOT/index.php?$query_string;
-        expires 30d;
-    }
-
-    location ~* ^.+\.(xml|json)$ {
-      try_files $uri $uri/;
+    location = / {
+       rewrite / /api/doc/ permanent;
     }
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
     }
-
 }
 
